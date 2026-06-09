@@ -1,60 +1,19 @@
 from flask import Flask, render_template, redirect, url_for, request, flash, session
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_mysqldb import MySQL
 from functools import wraps
-import sqlite3
-import os
 
 app = Flask(__name__)
-app.secret_key = 'bytt-meg-ut'
+app.secret_key = 'superhemmelig' 
 
-DATABASE = 'helpdesk.db'
+app.config['MYSQL_HOST'] = '127.0.0.1'
+app.config['MYSQL_PORT'] = 3307
+app.config['MYSQL_USER'] = 'ticket_admin'
+app.config['MYSQL_PASSWORD'] = 'abc123'
+app.config['MYSQL_DB'] = 'helpdesk_db'
+app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
-
-# ─── Database-hjelper ─────────────────────────────────────────────
-
-def get_db():
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row  # gjør at vi kan bruke kolonnenavn
-    return conn
-
-
-def init_db():
-    """Opprett tabeller og legg til testbruker hvis databasen er tom."""
-    conn = get_db()
-    conn.executescript('''
-        CREATE TABLE IF NOT EXISTS users (
-            id            INTEGER PRIMARY KEY AUTOINCREMENT,
-            username      TEXT NOT NULL UNIQUE,
-            password_hash TEXT NOT NULL,
-            email         TEXT NOT NULL UNIQUE,
-            role          TEXT NOT NULL DEFAULT 'bruker',
-            created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE TABLE IF NOT EXISTS tickets (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id     INTEGER NOT NULL,
-            title       TEXT NOT NULL,
-            description TEXT NOT NULL,
-            category    TEXT NOT NULL DEFAULT 'annet',
-            status      TEXT NOT NULL DEFAULT 'åpen',
-            created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        );
-    ''')
-
-    # Legg til admin-bruker hvis ingen brukere finnes
-    existing = conn.execute("SELECT id FROM users LIMIT 1").fetchone()
-    if not existing:
-        conn.execute(
-            "INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, ?)",
-            ('admin', 'admin@firma.no', generate_password_hash('passord123'), 'admin')
-        )
-        conn.commit()
-        print("Testbruker opprettet: admin / passord123")
-
-    conn.close()
+mysql = MySQL(app)
 
 
 # ─── Hjelpe-dekoratorer ───────────────────────────────────────────
@@ -92,9 +51,10 @@ def login():
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
 
-        conn = get_db()
-        user = conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
-        conn.close()
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT * FROM users WHERE username = %s", (username,))
+        user = cur.fetchone()
+        cur.close()
 
         if user and check_password_hash(user['password_hash'], password):
             session['user_id'] = user['id']
@@ -129,10 +89,21 @@ def dashboard():
 @login_required
 def new_ticket():
     if request.method == 'POST':
-        # TODO: hent data fra skjemaet
-        # TODO: valider input (tomme felt, lengde osv.)
-        # TODO: sett inn ny sak i databasen
-        pass
+        title = request.form.get('title', '').strip()
+        description = request.form.get('description', '').strip()
+        category = request.form.get('category', 'annet')
+
+        if not title or not description:
+            flash('Tittel og beskrivelse er påkrevd.', 'danger')
+        else:
+            cur = mysql.connection.cursor()
+            cur.execute(
+                "INSERT INTO tickets (user_id, title, description, category) VALUES (%s, %s, %s, %s)",
+                (session['user_id'], title, description, category)
+            )
+            mysql.connection.commit()
+            cur.close()
+            return redirect(url_for('dashboard'))
 
     return render_template('new_ticket.html')
 
@@ -168,5 +139,4 @@ def update_ticket(ticket_id):
 
 
 if __name__ == '__main__':
-    init_db()
     app.run(debug=True)

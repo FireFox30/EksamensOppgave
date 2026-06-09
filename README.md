@@ -43,7 +43,7 @@ Første gang appen starter opprettes databasen og en admin-bruker automatisk.
 | Brukernavn | Passord     | Rolle |
 |------------|-------------|-------|
 | admin      | passord123  | admin |
-| aksel      | IMKuben1337!| bruker|
+| aksel      | IMKuben1337 | bruker|
 
 ## Funksjonalitet
 
