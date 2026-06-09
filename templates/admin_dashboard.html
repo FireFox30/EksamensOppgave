@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Admin – Alle saker{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Admin – Alle innmeldte saker</h2>
+    <span class="badge">{{ tickets | length }} saker totalt</span>
+</div>
+
+<!-- Enkel filtrering med JS -->
+<div class="filter-bar">
+    <label>Filtrer: </label>
+    <select id="statusFilter">
+        <option value="">Alle statuser</option>
+        <option value="åpen">Åpen</option>
+        <option value="under behandling">Under behandling</option>
+        <option value="løst">Løst</option>
+        <option value="lukket">Lukket</option>
+    </select>
+</div>
+
+<table id="ticketTable">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Bruker</th>
+            <th>Tittel</th>
+            <th>Kategori</th>
+            <th>Status</th>
+            <th>Opprettet</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for t in tickets %}
+        <tr data-status="{{ t.status }}">
+            <td>{{ t.id }}</td>
+            <td>{{ t.username }}</td>
+            <td><a href="{{ url_for('view_ticket', ticket_id=t.id) }}">{{ t.title }}</a></td>
+            <td>{{ t.category }}</td>
+            <td><span class="badge badge-{{ t.status | replace(' ', '-') }}">{{ t.status }}</span></td>
+            <td>{{ t.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}

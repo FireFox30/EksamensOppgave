@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Ny sak – IT Helpdesk{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Meld inn nytt IT-problem</h2>
+
+    <form method="POST">
+        <label for="title">Kort beskrivelse *</label>
+        <input type="text" id="title" name="title" maxlength="200" required
+               placeholder="F.eks. Kan ikke logge inn på e-post">
+
+        <label for="category">Kategori</label>
+        <select id="category" name="category">
+            <option value="hardware">Hardware (PC, skjerm, tastatur…)</option>
+            <option value="software">Software / program</option>
+            <option value="nettverk">Nettverk / internett</option>
+            <option value="konto">Konto / tilgang</option>
+            <option value="annet" selected>Annet</option>
+        </select>
+
+        <label for="description">Detaljert beskrivelse *</label>
+        <textarea id="description" name="description" rows="6" required
+                  placeholder="Beskriv problemet så detaljert som mulig. Hva skjer? Når startet det?"></textarea>
+
+        <div class="form-actions">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Avbryt</a>
+            <button type="submit" class="btn btn-primary">Send inn sak</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Sak #{{ ticket.id }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="ticket-header">
+        <h2>Sak #{{ ticket.id }}: {{ ticket.title }}</h2>
+        <span class="badge badge-{{ ticket.status | replace(' ', '-') }}">{{ ticket.status }}</span>
+    </div>
+
+    <dl class="ticket-meta">
+        <dt>Kategori</dt>   <dd>{{ ticket.category }}</dd>
+        <dt>Opprettet</dt>  <dd>{{ ticket.created_at.strftime('%d.%m.%Y kl. %H:%M') }}</dd>
+        <dt>Sist endret</dt><dd>{{ ticket.updated_at.strftime('%d.%m.%Y kl. %H:%M') }}</dd>
+    </dl>
+
+    <h3>Beskrivelse</h3>
+    <p class="ticket-description">{{ ticket.description }}</p>
+
+    {% if session.role == 'admin' %}
+    <hr>
+    <h3>Oppdater status (admin)</h3>
+    <form method="POST" action="{{ url_for('update_ticket', ticket_id=ticket.id) }}">
+        <select name="status">
+            {% for s in ['åpen', 'under behandling', 'løst', 'lukket'] %}
+            <option value="{{ s }}" {% if ticket.status == s %}selected{% endif %}>{{ s | capitalize }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary">Lagre</button>
+    </form>
+    {% endif %}
+
+    <a href="{{ url_for('admin_dashboard' if session.role == 'admin' else 'dashboard') }}" class="btn btn-secondary">← Tilbake</a>
+</div>
+{% endblock %}
